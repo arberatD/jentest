@@ -26,6 +26,22 @@ pipeline {
             }
         }
 
+        // Neuer Schritt für die statische Code-Analyse
+        stage('Static Code Analysis') {
+            steps {
+                sh '''
+                . venv/bin/activate
+                pylint --output-format=text *.py > pylint-report.txt
+                '''
+            }
+            post {
+                always {
+                    // Sammle den Bericht und zeige ihn in Jenkins an
+                    recordIssues tools: [pyLint(pattern: 'pylint-report.txt')]
+                }
+            }
+        }
+
         stage('Run Tests') {
             steps {
                 sh '''
@@ -37,7 +53,6 @@ pipeline {
 
         stage('Deploy') {
             when {
-                // Nur ausführen, wenn alle vorherigen Stufen erfolgreich waren
                 expression { currentBuild.result == 'SUCCESS' }
             }
             steps {
